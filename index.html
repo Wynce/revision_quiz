@@ -223,6 +223,13 @@
             animation: shake 0.5s ease-in-out;
         }
 
+        .blank-input.show-answer {
+            background-color: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+            font-weight: bold;
+        }
+
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-3px); }
@@ -253,9 +260,10 @@
             transform: scale(1.1);
         }
 
-        .status-indicator.incorrect {
-            background: #dc3545;
-            color: white;
+        .status-indicator.show-answer {
+            background: #ffc107;
+            color: #212529;
+            font-weight: bold;
         }
 
         .placeholder-text {
@@ -356,8 +364,11 @@ Put words you want to turn into blanks inside [square brackets]. Students will s
                 <button class="btn btn-primary" onclick="generateRevision()">
                     🚀 Generate Revision
                 </button>
-                <button class="btn btn-secondary" onclick="checkAllAnswers()">
-                    ✨ Check All Answers
+                <button class="btn btn-secondary" id="submitBtn" onclick="submitQuiz()" style="display: none;">
+                    📝 Submit Quiz
+                </button>
+                <button class="btn btn-secondary" id="revealBtn" onclick="revealAnswers()" style="display: none;">
+                    👁️ Reveal Answers
                 </button>
                 <button class="btn btn-secondary" onclick="resetRevision()">
                     🔄 Reset
@@ -377,6 +388,7 @@ Put words you want to turn into blanks inside [square brackets]. Students will s
         let totalBlanks = 0;
         let correctAnswers = 0;
         let incorrectAnswers = 0;
+        let quizSubmitted = false;
 
         function generateRevision() {
             const notesText = document.getElementById('notesTextarea').value.trim();
@@ -390,6 +402,7 @@ Put words you want to turn into blanks inside [square brackets]. Students will s
             totalBlanks = 0;
             correctAnswers = 0;
             incorrectAnswers = 0;
+            quizSubmitted = false;
 
             // Process the text to find words in brackets
             let processedText = notesText.replace(/\[([^\]]+)\]/g, (match, word) => {
@@ -409,7 +422,6 @@ Put words you want to turn into blanks inside [square brackets]. Students will s
                 return `<span class="blank-container">
                     <input type="text" class="blank-input" id="${blankId}" 
                            placeholder="${placeholder}" 
-                           oninput="checkAnswer('${blankId}')" 
                            autocomplete="off">
                     <div class="status-indicator empty" id="${blankId}_status">?</div>
                 </span>`;
@@ -417,55 +429,181 @@ Put words you want to turn into blanks inside [square brackets]. Students will s
 
             document.getElementById('revisionContent').innerHTML = processedText;
             document.getElementById('revisionContent').style.display = 'block';
+            document.getElementById('submitBtn').style.display = 'inline-flex';
+            document.getElementById('revealBtn').style.display = 'none';
             
             updateStats();
         }
 
-        function checkAnswer(blankId) {
-            const input = document.getElementById(blankId);
-            const statusIndicator = document.getElementById(blankId + '_status');
-            const userAnswer = input.value.toLowerCase().trim();
-            
-            const blankData = blanksData.find(blank => blank.id === blankId);
-            
-            if (!userAnswer) {
-                // Empty input
-                input.className = 'blank-input';
-                statusIndicator.className = 'status-indicator empty';
-                statusIndicator.textContent = '?';
-                return;
-            }
-            
-            if (userAnswer === blankData.answer) {
-                // Correct answer
-                input.className = 'blank-input correct';
-                statusIndicator.className = 'status-indicator correct';
-                statusIndicator.textContent = '✓';
-            } else {
-                // Incorrect answer
-                input.className = 'blank-input incorrect';
-                statusIndicator.className = 'status-indicator incorrect';
-                statusIndicator.textContent = '✗';
-            }
-            
-            updateStats();
-        }
+        // Remove the checkAnswer function since we don't want instant feedback
+        
+        // Sample notes for demonstration
 
-        function checkAllAnswers() {
+        function submitQuiz() {
+        function revealAnswers() {
             if (totalBlanks === 0) {
                 alert('Please generate revision notes first! 🚀');
                 return;
             }
 
+            if (!quizSubmitted) {
+                alert('Please submit your quiz first to see your score! 📝');
+                return;
+            }
+
+            quizSubmitted = true;
+
+            // Calculate score based on current answers
+            let correctCount = 0;
+            let attemptedCount = 0;
+
             blanksData.forEach(blank => {
-                checkAnswer(blank.id);
+                const input = document.getElementById(blank.id);
+                const userAnswer = input.value.toLowerCase().trim();
+                
+                if (userAnswer) {
+                    attemptedCount++;
+                    if (userAnswer === blank.answer) {
+                        correctCount++;
+                    }
+                }
             });
 
-            // Show celebration if all correct
-            const currentCorrect = getCurrentCorrectCount();
-            if (currentCorrect === totalBlanks && totalBlanks > 0) {
-                showCelebration();
+            const score = totalBlanks > 0 ? Math.round((correctCount / totalBlanks) * 100) : 0;
+            
+            // Show score results
+            showScoreResults(correctCount, totalBlanks, score, attemptedCount);
+            
+            // Hide submit button and show reveal button
+            document.getElementById('submitBtn').style.display = 'none';
+            document.getElementById('revealBtn').style.display = 'inline-flex';
+        }
+
+        function showScoreResults(correct, total, score, attempted) {
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            
+            const results = document.createElement('div');
+            results.className = 'celebration';
+            
+            let message = '';
+            let emoji = '';
+            
+            if (score >= 90) {
+                message = 'Outstanding Performance!';
+                emoji = '🌟';
+            } else if (score >= 70) {
+                message = 'Great Work!';
+                emoji = '🎉';
+            } else if (score >= 50) {
+                message = 'Good Effort!';
+                emoji = '👍';
+            } else {
+                message = 'Keep Learning!';
+                emoji = '💪';
             }
+            
+            results.innerHTML = `
+                <h2>${emoji} Quiz Submitted! ${emoji}</h2>
+                <h3>${message}</h3>
+                <div style="margin: 20px 0; font-size: 1.2em;">
+                    <p><strong>Your Score: ${correct}/${total}</strong></p>
+                    <p><strong>Percentage: ${score}%</strong></p>
+                    <p>Questions Attempted: ${attempted}/${total}</p>
+                </div>
+                <p style="margin-bottom: 20px;">Ready to see which answers were correct?</p>
+                <button class="btn btn-primary" onclick="closeScoreResults()">Continue 📚</button>
+            `;
+            
+            document.body.appendChild(overlay);
+            document.body.appendChild(results);
+        }
+
+        function closeScoreResults() {
+            const overlay = document.querySelector('.overlay');
+            const results = document.querySelector('.celebration');
+            if (overlay) overlay.remove();
+            if (results) results.remove();
+        }
+            if (totalBlanks === 0) {
+                alert('Please generate revision notes first! 🚀');
+                return;
+            }
+
+            let allCorrect = true;
+            let answeredCount = 0;
+
+            blanksData.forEach(blank => {
+                const input = document.getElementById(blank.id);
+                const statusIndicator = document.getElementById(blank.id + '_status');
+                const userAnswer = input.value.toLowerCase().trim();
+                
+                if (!userAnswer) {
+                    // Empty - show the correct answer
+                    input.value = blank.answer;
+                    input.className = 'blank-input show-answer';
+                    statusIndicator.className = 'status-indicator show-answer';
+                    statusIndicator.textContent = 'A';
+                    allCorrect = false;
+                } else {
+                    answeredCount++;
+                    if (userAnswer === blank.answer) {
+                        // Correct answer
+                        input.className = 'blank-input correct';
+                        statusIndicator.className = 'status-indicator correct';
+                        statusIndicator.textContent = '✓';
+                    } else {
+                        // Incorrect answer - show correct answer
+                        input.value = blank.answer + ' (was: ' + input.value + ')';
+                        input.className = 'blank-input incorrect';
+                        statusIndicator.className = 'status-indicator incorrect';
+                        statusIndicator.textContent = '✗';
+                        allCorrect = false;
+                    }
+                }
+            });
+
+            updateStats();
+
+            // Show detailed results with answers revealed
+            const correctCount = getCurrentCorrectCount();
+            const score = totalBlanks > 0 ? Math.round((correctCount / totalBlanks) * 100) : 0;
+            
+            showDetailedResults(correctCount, totalBlanks, score);
+        }
+
+        function showDetailedResults(correct, total, score) {
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            
+            const results = document.createElement('div');
+            results.className = 'celebration';
+            
+            results.innerHTML = `
+                <h2>📋 Detailed Results</h2>
+                <div style="margin: 20px 0; font-size: 1.1em;">
+                    <p><strong>Final Score: ${correct}/${total} (${score}%)</strong></p>
+                    <br>
+                    <div style="text-align: left; font-size: 0.9em;">
+                        <p><span style="color: #28a745;">●</span> <strong>Green:</strong> Your correct answers</p>
+                        <p><span style="color: #dc3545;">●</span> <strong>Red:</strong> Your incorrect answers</p>
+                        <p><span style="color: #ffc107;">●</span> <strong>Yellow:</strong> Questions you didn't attempt</p>
+                    </div>
+                </div>
+                <p>Review the answers above and try again when ready!</p>
+                <br>
+                <button class="btn btn-primary" onclick="closeDetailedResults()">Continue Learning! 📚</button>
+            `;
+            
+            document.body.appendChild(overlay);
+            document.body.appendChild(results);
+        }
+
+        function closeDetailedResults() {
+            const overlay = document.querySelector('.overlay');
+            const results = document.querySelector('.celebration');
+            if (overlay) overlay.remove();
+            if (results) results.remove();
         }
 
         function getCurrentCorrectCount() {
@@ -473,7 +611,8 @@ Put words you want to turn into blanks inside [square brackets]. Students will s
             blanksData.forEach(blank => {
                 const input = document.getElementById(blank.id);
                 const userAnswer = input.value.toLowerCase().trim();
-                if (userAnswer === blank.answer) {
+                // Only count as correct if it matches exactly and wasn't revealed
+                if (userAnswer === blank.answer && !input.classList.contains('show-answer')) {
                     correct++;
                 }
             });
@@ -524,6 +663,12 @@ Put words you want to turn into blanks inside [square brackets]. Students will s
                 
                 correctAnswers = 0;
                 incorrectAnswers = 0;
+                quizSubmitted = false;
+                
+                // Reset button visibility
+                document.getElementById('submitBtn').style.display = totalBlanks > 0 ? 'inline-flex' : 'none';
+                document.getElementById('revealBtn').style.display = 'none';
+                
                 updateStats();
             }
         }
@@ -535,11 +680,11 @@ Put words you want to turn into blanks inside [square brackets]. Students will s
             const celebration = document.createElement('div');
             celebration.className = 'celebration';
             celebration.innerHTML = `
-                <h2>🎉 Excellent Work! 🎉</h2>
-                <p>You've completed all the revision questions correctly!</p>
+                <h2>🎉 Perfect Score! 🎉</h2>
+                <p>Outstanding! You got everything correct!</p>
                 <p><strong>Perfect Score: ${totalBlanks}/${totalBlanks}</strong></p>
                 <br>
-                <button class="btn btn-primary" onclick="closeCelebration()">Continue Learning! 📚</button>
+                <button class="btn btn-primary" onclick="closeCelebration()">Amazing Work! 🌟</button>
             `;
             
             document.body.appendChild(overlay);
@@ -557,8 +702,6 @@ Put words you want to turn into blanks inside [square brackets]. Students will s
             if (overlay) overlay.remove();
             if (celebration) celebration.remove();
         }
-
-        // Sample notes for demonstration
         document.getElementById('notesTextarea').value = `The [force] required to accelerate an object is equal to its [mass] times its [acceleration]. This is known as [Newton's] second law of motion.
 
 [Energy] cannot be created or destroyed, only transferred from one form to another. This is the law of conservation of [energy].
