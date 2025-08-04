@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IGCSE Interactive Revision</title>
+    <title>IGCSE Revision Quiz</title>
     <style>
         * {
             margin: 0;
@@ -260,6 +260,11 @@
             transform: scale(1.1);
         }
 
+        .status-indicator.incorrect {
+            background: #dc3545;
+            color: white;
+        }
+
         .status-indicator.show-answer {
             background: #ffc107;
             color: #212529;
@@ -323,8 +328,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>⚡ Revision Master</h1>
-            <p>Interactive IGCSE Notes</p>
+            <h1>📚 IGCSE Revision Quiz</h1>
+            <p>Interactive Learning Tool for All Subjects</p>
         </div>
 
         <div class="progress-section">
@@ -353,16 +358,18 @@
 
         <div class="content">
             <div class="notes-input">
-                <label for="notesTextarea"><strong>📝 Paste your notes here:</strong></label>
+                <label for="notesTextarea"><strong>📝 Paste your revision notes here:</strong></label>
                 <br><br>
                 <textarea id="notesTextarea" placeholder="Example: The [force] required to accelerate an object is equal to its [mass] times its [acceleration]. This is known as [Newton's] second law of motion.
 
-Put words you want to turn into blanks inside [square brackets]. Students will see the first letter and underscores for the remaining letters."></textarea>
+Put words you want to turn into blanks inside [square brackets]. Students will see the first letter and underscores for the remaining letters.
+
+Works for any subject - Physics, Biology, Chemistry, Geography, History, and more!"></textarea>
             </div>
 
             <div class="controls">
                 <button class="btn btn-primary" onclick="generateRevision()">
-                    🚀 Generate Revision
+                    🚀 Generate Quiz
                 </button>
                 <button class="btn btn-secondary" id="submitBtn" onclick="submitQuiz()" style="display: none;">
                     📝 Submit Quiz
@@ -370,8 +377,11 @@ Put words you want to turn into blanks inside [square brackets]. Students will s
                 <button class="btn btn-secondary" id="revealBtn" onclick="revealAnswers()" style="display: none;">
                     👁️ Reveal Answers
                 </button>
+                <button class="btn btn-secondary" id="retestBtn" onclick="retestQuestions()" style="display: none;">
+                    🔄 Retest Questions
+                </button>
                 <button class="btn btn-secondary" onclick="resetRevision()">
-                    🔄 Reset
+                    🗑️ Reset All
                 </button>
             </div>
 
@@ -431,23 +441,14 @@ Put words you want to turn into blanks inside [square brackets]. Students will s
             document.getElementById('revisionContent').style.display = 'block';
             document.getElementById('submitBtn').style.display = 'inline-flex';
             document.getElementById('revealBtn').style.display = 'none';
+            document.getElementById('retestBtn').style.display = 'none';
             
             updateStats();
         }
 
-        // Remove the checkAnswer function since we don't want instant feedback
-        
-        // Sample notes for demonstration
-
         function submitQuiz() {
-        function revealAnswers() {
             if (totalBlanks === 0) {
                 alert('Please generate revision notes first! 🚀');
-                return;
-            }
-
-            if (!quizSubmitted) {
-                alert('Please submit your quiz first to see your score! 📝');
                 return;
             }
 
@@ -474,9 +475,10 @@ Put words you want to turn into blanks inside [square brackets]. Students will s
             // Show score results
             showScoreResults(correctCount, totalBlanks, score, attemptedCount);
             
-            // Hide submit button and show reveal button
+            // Hide submit button and show reveal + retest buttons
             document.getElementById('submitBtn').style.display = 'none';
             document.getElementById('revealBtn').style.display = 'inline-flex';
+            document.getElementById('retestBtn').style.display = 'inline-flex';
         }
 
         function showScoreResults(correct, total, score, attempted) {
@@ -525,8 +527,15 @@ Put words you want to turn into blanks inside [square brackets]. Students will s
             if (overlay) overlay.remove();
             if (results) results.remove();
         }
+
+        function revealAnswers() {
             if (totalBlanks === 0) {
                 alert('Please generate revision notes first! 🚀');
+                return;
+            }
+
+            if (!quizSubmitted) {
+                alert('Please submit your quiz first to see your score! 📝');
                 return;
             }
 
@@ -606,6 +615,41 @@ Put words you want to turn into blanks inside [square brackets]. Students will s
             if (results) results.remove();
         }
 
+        function retestQuestions() {
+            if (totalBlanks === 0) {
+                alert('Please generate a quiz first! 🚀');
+                return;
+            }
+
+            if (confirm('Start a new attempt with the same questions? This will clear your current answers. 🔄')) {
+                // Clear all input fields and reset their states
+                blanksData.forEach(blank => {
+                    const input = document.getElementById(blank.id);
+                    const statusIndicator = document.getElementById(blank.id + '_status');
+                    
+                    input.value = '';
+                    input.className = 'blank-input';
+                    statusIndicator.className = 'status-indicator empty';
+                    statusIndicator.textContent = '?';
+                });
+                
+                // Reset quiz state
+                correctAnswers = 0;
+                incorrectAnswers = 0;
+                quizSubmitted = false;
+                
+                // Reset button visibility - back to fresh quiz state
+                document.getElementById('submitBtn').style.display = 'inline-flex';
+                document.getElementById('revealBtn').style.display = 'none';
+                document.getElementById('retestBtn').style.display = 'none';
+                
+                updateStats();
+                
+                // Show encouraging message
+                alert('Ready for another attempt! Good luck! 🎯');
+            }
+        }
+
         function getCurrentCorrectCount() {
             let correct = 0;
             blanksData.forEach(blank => {
@@ -650,24 +694,24 @@ Put words you want to turn into blanks inside [square brackets]. Students will s
                 return;
             }
 
-            if (confirm('Are you sure you want to reset? This will clear all your answers. 🔄')) {
-                blanksData.forEach(blank => {
-                    const input = document.getElementById(blank.id);
-                    const statusIndicator = document.getElementById(blank.id + '_status');
-                    
-                    input.value = '';
-                    input.className = 'blank-input';
-                    statusIndicator.className = 'status-indicator empty';
-                    statusIndicator.textContent = '?';
-                });
+            if (confirm('Are you sure you want to reset everything? This will clear all content and answers. 🗑️')) {
+                // Clear the textarea
+                document.getElementById('notesTextarea').value = '';
                 
+                // Hide the revision content
+                document.getElementById('revisionContent').style.display = 'none';
+                
+                // Reset all variables
+                blanksData = [];
+                totalBlanks = 0;
                 correctAnswers = 0;
                 incorrectAnswers = 0;
                 quizSubmitted = false;
                 
                 // Reset button visibility
-                document.getElementById('submitBtn').style.display = totalBlanks > 0 ? 'inline-flex' : 'none';
+                document.getElementById('submitBtn').style.display = 'none';
                 document.getElementById('revealBtn').style.display = 'none';
+                document.getElementById('retestBtn').style.display = 'none';
                 
                 updateStats();
             }
@@ -702,6 +746,8 @@ Put words you want to turn into blanks inside [square brackets]. Students will s
             if (overlay) overlay.remove();
             if (celebration) celebration.remove();
         }
+
+        // Sample notes for demonstration
         document.getElementById('notesTextarea').value = `The [force] required to accelerate an object is equal to its [mass] times its [acceleration]. This is known as [Newton's] second law of motion.
 
 [Energy] cannot be created or destroyed, only transferred from one form to another. This is the law of conservation of [energy].
