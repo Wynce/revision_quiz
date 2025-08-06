@@ -1,5 +1,3 @@
-# Create vercel.json file
-cat > vercel.json << 'EOF'
 {
   "rewrites": [
     {
@@ -8,4 +6,3 @@ cat > vercel.json << 'EOF'
     }
   ]
 }
-EOF
