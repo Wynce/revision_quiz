@@ -3,3 +3,4 @@ deepseek_*
 gemini.*
 *.css
 backup*.css
+.vercel
